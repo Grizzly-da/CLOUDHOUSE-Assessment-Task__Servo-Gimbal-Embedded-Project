@@ -1,0 +1,33 @@
+
+# Keil MDK generated files
+**/Objects/
+**/Listings/
+
+# Keil user-specific configuration
+*.uvguix*
+*.uvoptx
+
+# Compiled output files
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.crf
+*.dep
+*.d
+*.o
+
+# Temporary files
+*.bak
+*.tmp
+*.log
+
+# CMake build directories
+build/
+cmake-build-*/
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+*.lst
