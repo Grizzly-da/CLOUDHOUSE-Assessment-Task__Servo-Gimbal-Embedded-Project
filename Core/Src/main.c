@@ -54,7 +54,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+char u[25];
 volatile uint8_t character; //µ¥×Ö·û  
 volatile uint8_t recvd[34]; //×Ö·û´®»º³å
 volatile uint8_t  i= 0;//×Ö·û´®Êý×é½Ç±ê
@@ -171,6 +171,7 @@ void  dealCMD(void)
 {
 	 
     char CMD[40];
+
 	 __disable_irq();
     uint8_t k,length=strlen((const char *)recvd);
 	uint32_t Compare=1500;
@@ -181,6 +182,7 @@ void  dealCMD(void)
     if (strcmp(CMD, "AT") == 0)
     {
         OLED_ShowString(0, 24, "OK                  ", 6);
+			 strcpy(u,"OK\n");
         OLED_Update();
     }
     else if (strcmp(CMD, "STATUS") == 0)
@@ -194,11 +196,13 @@ void  dealCMD(void)
         buf[0]='O'; buf[1]='K'; buf[2]=' '; buf[3]='M';buf[4]='O'; buf[5]='D'; buf[6]='E'; buf[7]='=';
         buf[8]='0' + n; buf[9]=' ';buf[10]=' ';buf[11]=' ';buf[12]=' ';buf[13]=' ';buf[14]=' ';buf[15]='\0';
         OLED_ShowString(0, 24, buf, 6);
+			strcpy(u,buf);
         OLED_Update();
     }
 		else if(strncmp(CMD,"PITCH ",6)==0||strncmp(CMD,"YAW ",4)==0)
     {
-			if(cnt!=1){OLED_ShowString(0,24,"ERR MODE                ",6);OLED_Update();return;}
+			if(cnt!=1){OLED_ShowString(0,24,"ERR MODE                ",6);strcpy(u,"ERR MODE\n");
+			OLED_Update();return;}
 			int is_pitch=0,Angle=0; 
 			if(strncmp(CMD,"YAW ",4)==0)
 			{
@@ -213,6 +217,7 @@ void  dealCMD(void)
 			if(Angle<0||Angle>180)
 			{
 			OLED_ShowString(0,24,"ERR OverStep   ",6);
+				strcpy(u,"ERR Overstep\n");
 			OLED_Update();
 				
 				return;
@@ -224,6 +229,7 @@ void  dealCMD(void)
 			Compare=pitch+(Angle-90)*11;
 	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,Compare);
 			OLED_ShowString(0,24,"OK                ",6);
+			strcpy(u,"OK\n");
 			OLED_Update();
 		}			
 		 else	
@@ -232,6 +238,7 @@ void  dealCMD(void)
 			Compare=(uint32_t)(yaw+(Angle-90)*10.5f);
 	  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_2,Compare);
 			OLED_ShowString(0,24,"OK                ",6);
+			strcpy(u,"OK\n");
 			OLED_Update();
 		}			
 		sprintf(pitch_yaw,"PIT %d YAW %d                   ",pitch_angle,yaw_angle);
@@ -247,6 +254,7 @@ void  dealCMD(void)
     if (MPU6050ReadID() == 0)
 	   {
 	   OLED_ShowString(0,24,"ERR NotFound",6);//attention!!!0x70,Edit this in mpu6050HeadFile
+			 strcpy(u,"ERR NotFound\n");
 	   OLED_Update();
 		 MPU_OK=0;
 			
@@ -287,6 +295,7 @@ void  dealCMD(void)
         if ((gyro_max[m] - gyro_min[m]) > 300)
 		  {
 			OLED_ShowString(0,24,"ERR Shake       ",6);
+				strcpy(u,"ERR Shake\n");
 			OLED_Update();
 			MPU_OK=0;
 				
@@ -299,6 +308,7 @@ void  dealCMD(void)
        if (fabsf(fabsf((float)a[2]) - 16384.0f) > 2000.0f)
 		 {
 	   OLED_ShowString(0,24,"ERR Uneven      ",6);
+			 strcpy(u,"ERR Uneven\n");
 	   OLED_Update();
 		 MPU_OK=0;
 			
@@ -308,6 +318,7 @@ void  dealCMD(void)
       else
 	  {
 	   OLED_ShowString(0,24,"OK CAL           ",6);
+			strcpy(u,"OK CAL\n");
 	   OLED_Update();
 		 MPU_OK=1;
 		gyro_bias[0] = gyro_sum[0] / 200;
@@ -322,58 +333,13 @@ void  dealCMD(void)
 	}
 	else
     {
-        OLED_ShowString(0, 24, "ERR InvalidCMD      ", 6);
+        OLED_ShowString(0, 24, "ERR InvalidCMD      ", 6);strcpy(u,"ERR CMD\n");
         OLED_Update();
     }
 		
 }
 
-/*uint16_t oled_check(void)
-{
-	//SCL HIGH->work,SCL LOW->prepare for data
-    //START
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-    for(volatile int i=0;i<20;i++) __NOP();
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
-    for(volatile int i=0;i<20;i++) __NOP();
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-    for(volatile int i=0;i<20;i++) __NOP();
 
-    // search for locatin 0x78
-    uint8_t ack = 0, d = 0x78;
-    for(uint8_t i=0;i<8;i++){
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, (d&0x80)?GPIO_PIN_SET:GPIO_PIN_RESET);
-        d <<= 1;
-        for(volatile int j=0;j<20;j++) __NOP();
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-        for(volatile int j=0;j<20;j++) __NOP();
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-        for(volatile int j=0;j<20;j++) __NOP();
-    }
-    //answer ACK
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-    for(volatile int j=0;j<20;j++) __NOP();
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-    for(volatile int j=0;j<20;j++) __NOP();
-    ack = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-
-    //STOP
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
-    for(volatile int j=0;j<20;j++) __NOP();
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-    for(volatile int j=0;j<20;j++) __NOP();
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-
-    if(ack == 0)
-	   {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-		return 1;
-       }
-		else return 0;
-		
-}*/
 
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -567,6 +533,7 @@ int main(void)
 while (1)
 {
      dealADC();
+	  
 	   if (cnt == 0) 
 		{
 			static uint32_t last_track = 0;
@@ -592,7 +559,7 @@ while (1)
         HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_2);
         if (flag == 1)
 				{	
-				 dealCMD();
+				 dealCMD();HAL_UART_Transmit(&huart1,(uint8_t*)u,strlen(u),100);
 				}
 				else if (flag == 2)
     {
@@ -660,12 +627,12 @@ while (1)
                 mode_str[5] = '0' + n;
                 mode_str[6] = '\0';
 
-                OLED_ShowString(0,12 , mode_str, 6);
+                OLED_ShowString(0,12 , mode_str, 6);strcpy(u,mode_str);HAL_UART_Transmit(&huart1,(uint8_t*)u,strlen(u),100);
 						
 						 if (press==1)
-                    OLED_ShowString(48, 12, "KEY L", 6);
+						 { OLED_ShowString(48, 12, "KEY L", 6);strcpy(u,"KEY L");HAL_UART_Transmit(&huart1,(uint8_t*)u,strlen(u),100);}
                 else if(press==0)
-                    OLED_ShowString(48, 12, "KEY S", 6);
+								{OLED_ShowString(48, 12, "KEY S", 6);strcpy(u,"KEY S");HAL_UART_Transmit(&huart1,(uint8_t*)u,strlen(u),100);}
 
                 OLED_Update();
 				}
