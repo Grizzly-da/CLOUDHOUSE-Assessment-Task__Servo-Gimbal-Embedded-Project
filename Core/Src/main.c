@@ -117,10 +117,22 @@ void MPU_UpdateAttitude(void)
     float acc_roll  = atan2f( ay, sqrtf(ax*ax + az*az)) * 57.3f;
     acc_pitch -= pitch0;
     acc_roll  -= roll0;
+	if (az < 0.0f) {
+    if (acc_pitch >= 0.0f) acc_pitch =  180.0f - acc_pitch;
+    else                    acc_pitch = -180.0f - acc_pitch;
+
+    if (acc_roll >= 0.0f)  acc_roll  =  180.0f - acc_roll;
+    else                    acc_roll  = -180.0f - acc_roll;
+}
+
+
+float gy_eff = (az < 0.0f) ? -gy : gy;
+float gx_eff = (az < 0.0f) ? -gx : gx;
+
+Pitch = 0.98f * (Pitch + gy_eff * 0.02f) + 0.02f * acc_pitch;
+Roll  = 0.98f * (Roll  + gx_eff * 0.02f) + 0.02f * acc_roll;
 	//互补滤波，陀螺仪积分修正，加速度修正
-	  const float dt = 0.02f;
-    Pitch = 0.98f * (Pitch + gx * dt) +0.02f * acc_pitch;
-    Roll  = 0.98f * (Roll  + gy * dt) + 0.02f * acc_roll;
+
 		
 		if(cnt==2)
 		{
